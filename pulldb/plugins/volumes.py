@@ -37,6 +37,39 @@ class VolumeGetController(controller.CementBaseController):
         resp, content = http_client.request(base_url + path)
         print content
 
+class VolumeRefreshController(controller.CementBaseController):
+    class Meta:
+        label = 'volume_refresh'
+        stacked_on = 'volume'
+        stacked_type = 'nested'
+        aliases = ['refresh']
+        aliases_only = True
+        arguments = [
+            (['--shard'], {
+                'help': 'Shard number to process',
+                'action': 'store',
+                'type': int,
+            }),
+            (['--shard_count'], {
+                'help': 'Total number of shards',
+                'action': 'store',
+                'type': int,
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/refresh/%s/%s' % (
+            self.app.pargs.shard_count,
+            self.app.pargs.shard,
+        )
+        resp, content = http_client.request(base_url + path)
+        print content
+
 class VolumeSearchController(controller.CementBaseController):
     class Meta:
         label = 'volume_search'
@@ -61,9 +94,17 @@ class VolumeSearchController(controller.CementBaseController):
             'q': self.app.pargs.query,
         })
         resp, content = http_client.request(base_url + path)
-        print content
+        volumes = json.loads(content)
+        for volume in volumes:
+            print '%7s %4s (%4s) %s' % (
+                volume['identifier'],
+                volume['start_year'],
+                volume['issue_count'],
+                volume['name'],
+            )
 
 def load():
     handler.register(VolumeController)
     handler.register(VolumeGetController)
+    handler.register(VolumeRefreshController)
     handler.register(VolumeSearchController)
