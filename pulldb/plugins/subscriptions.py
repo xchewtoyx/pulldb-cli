@@ -20,7 +20,13 @@ class SubscriptionController(controller.CementBaseController):
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/subscriptions/list'
         resp, content = http_client.request(base_url + path)
-        print content
+        subscriptions = json.loads(content)
+        for subscription in subscriptions:
+            print "%6s %4s %s" % (
+                subscription['volume']['identifier'],
+                subscription['volume']['start_year'],
+                subscription['volume']['name'],
+            )
 
 def load():
     handler.register(SubscriptionController)
