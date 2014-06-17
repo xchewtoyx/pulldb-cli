@@ -1,6 +1,8 @@
 import json
 from urllib import urlencode
 
+from dateutil.parser import parse as parse_date
+
 from cement.core import controller, handler
 
 class IssueController(controller.CementBaseController):
@@ -107,12 +109,16 @@ class IssueSearchController(controller.CementBaseController):
         })
         resp, content = http_client.request(base_url + path)
         issues = json.loads(content)
-        for issue in issues:
-            print "%7s %s %s %s" % (
-                issue['issue']['identifier'],
-                issue['issue']['pubdate'],
-                issue['volume']['name'],
-                issue['issue']['issue_number'],
+        print "Found %s matches" % issues['count']
+        for issue in issues['results']:
+            if issue.get('pubdate'):
+                pubdate = parse_date(issue['pubdate']).strftime('%Y-%m-%d')
+            else:
+                pubdate = ''
+            print "%7d %10s %s" % (
+                int(float(issue['issue_id'])),
+                pubdate,
+                issue['name'],
             )
 
 def load():
