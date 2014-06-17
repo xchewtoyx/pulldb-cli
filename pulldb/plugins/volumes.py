@@ -95,11 +95,11 @@ class VolumeSearchController(controller.CementBaseController):
         })
         resp, content = http_client.request(base_url + path)
         volumes = json.loads(content)
-        for volume in volumes:
-            print '%7s %4s (%4s) %s' % (
-                volume['identifier'],
+        for volume in volumes['results']:
+            print '%7s %4s %4s %s' % (
+                volume['volume_id'],
                 volume['start_year'],
-                volume['issue_count'],
+                volume.get('issue_count', ''),
                 volume['name'],
             )
 
