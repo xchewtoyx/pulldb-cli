@@ -2,6 +2,7 @@ import json
 from urllib import urlencode
 
 from cement.core import controller, handler
+from dateutil.parser import parse as parse_date
 
 class VolumeController(controller.CementBaseController):
     class Meta:
@@ -35,7 +36,17 @@ class VolumeGetController(controller.CementBaseController):
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/volumes/get/%s' % self.app.pargs.identifier
         resp, content = http_client.request(base_url + path)
-        print content
+        result = json.loads(content)
+        if result['status'] == 200:
+            print '%7s %s' % (
+                result['volume']['identifier'],
+                result['volume']['name'],
+            )
+        else:
+            print '%d %s' % (
+                result['status'],
+                result['message'],
+            )
 
 class VolumeRefreshController(controller.CementBaseController):
     class Meta:
