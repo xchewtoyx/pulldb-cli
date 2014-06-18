@@ -28,5 +28,48 @@ class SubscriptionController(controller.CementBaseController):
                 subscription['volume']['name'],
             )
 
+class AddSubscription(controller.CementBaseController):
+    class Meta:
+        label = 'subscription_add'
+        stacked_on = 'subscription'
+        stacked_type = 'nested'
+        aliases = ['add']
+        aliases_only = True
+        arguments = [
+            (['ids'], {
+                'help': 'Comicvine identifier for volume',
+                'action': 'store',
+                'nargs': '+',
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/subscriptions/add'
+        data = json.dumps({
+            'volumes': self.app.pargs.ids,
+        })
+        resp, content = http_client.request(
+            base_url + path,
+            method='POST',
+            headers={'Content-Type': 'application/json'},
+            body=data,
+        )
+        if resp.status != 200:
+            self.app.log.error('%r %r' % (resp, content))
+        else:
+            results = json.loads(content)
+            failed = results['results'].get('failed', [])
+            print '%d issues failed:\n%r' % (len(failed), failed)
+            added = results['results'].get('added', [])
+            print '%d issues added:\n%r' % (len(added), added)
+            skipped = results['results'].get('skipped', [])
+            print '%d issues skipped:\n%r' % (len(skipped), skipped)
+
 def load():
     handler.register(SubscriptionController)
+    handler.register(AddSubscription)

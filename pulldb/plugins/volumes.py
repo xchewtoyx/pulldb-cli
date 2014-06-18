@@ -45,8 +45,13 @@ class VolumeAddController(controller.CementBaseController):
             headers={'Content-Type': 'application/json'},
             body=data,
         )
-        result = json.loads(content)
-        print result
+        results = json.loads(content)
+        failed = results['results'].get('failed', [])
+        print '%d issues failed:\n%r' % (len(failed), failed)
+        added = results['results'].get('added', [])
+        print '%d issues added:\n%r' % (len(added), added)
+        skipped = results['results'].get('existing', [])
+        print '%d issues skipped:\n%r' % (len(skipped), skipped)
 
 class VolumeGetController(controller.CementBaseController):
     class Meta:
