@@ -14,6 +14,40 @@ class VolumeController(controller.CementBaseController):
     def default(self):
         self.app.args.print_help()
 
+class VolumeAddController(controller.CementBaseController):
+    class Meta:
+        label = 'volume_add'
+        stacked_on = 'volume'
+        stacked_type = 'nested'
+        aliases = ['add']
+        aliases_only = True
+        arguments = [
+            (['ids'], {
+                'help': 'Comicvine identifier for volume',
+                'action': 'store',
+                'nargs': '+',
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/add'
+        data = json.dumps({
+            'volumes': self.app.pargs.ids,
+        })
+        resp, content = http_client.request(
+            base_url + path,
+            method='POST',
+            headers={'Content-Type': 'application/json'},
+            body=data,
+        )
+        result = json.loads(content)
+        print result
+
 class VolumeGetController(controller.CementBaseController):
     class Meta:
         label = 'volume_get'
@@ -116,6 +150,7 @@ class VolumeSearchController(controller.CementBaseController):
 
 def load():
     handler.register(VolumeController)
+    handler.register(VolumeAddController)
     handler.register(VolumeGetController)
     handler.register(VolumeRefreshController)
     handler.register(VolumeSearchController)
