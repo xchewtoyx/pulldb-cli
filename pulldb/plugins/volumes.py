@@ -157,5 +157,5 @@ def load():
     handler.register(VolumeController)
     handler.register(VolumeAddController)
     handler.register(VolumeGetController)
-    handler.register(VolumeRefreshController)
+    #handler.register(VolumeRefreshController)
     handler.register(VolumeSearchController)

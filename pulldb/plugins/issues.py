@@ -47,22 +47,9 @@ class IssueRefreshController(controller.CementBaseController):
         aliases = ['refresh']
         aliases_only = True
         arguments = [
-            (['--shard'], {
-                'help': 'Shard number to process',
+            (['issue'], {
+                'help': 'Issue to refresh',
                 'action': 'store',
-                'type': int,
-                'default': 1,
-            }),
-            (['--shard_count'], {
-                'help': 'Total number of shards',
-                'action': 'store',
-                'type': int,
-                'default': 0,
-            }),
-            (['--volume'], {
-                'help': 'Volume to refresh',
-                'action': 'store',
-                'default': None,
             }),
         ]
 
@@ -72,14 +59,8 @@ class IssueRefreshController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        if self.app.pargs.volume:
-            path = '/api/issues/refresh/%s' % (
-                self.app.pargs.volume,
-            )
-        else:
-            path = '/api/issues/refresh/%s/%s' % (
-                self.app.pargs.shard_count,
-                self.app.pargs.shard,
+        path = '/api/issues/refresh/%s' % (
+                self.app.pargs.issue,
             )
         resp, content = http_client.request(base_url + path)
         print content
