@@ -99,7 +99,7 @@ class IssueSearchController(controller.CementBaseController):
             print "%7d %10s %s" % (
                 int(float(issue['issue_id'])),
                 pubdate,
-                issue['name'],
+                issue.get('name', 'key=%s' % issue['id']),
             )
 
 def load():
