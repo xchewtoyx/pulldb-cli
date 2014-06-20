@@ -53,6 +53,46 @@ class VolumeAddController(controller.CementBaseController):
         skipped = results['results'].get('existing', [])
         print '%d issues skipped:\n%r' % (len(skipped), skipped)
 
+class IndexController(controller.CementBaseController):
+    class Meta:
+        label = 'volume_index'
+        stacked_on = 'volume'
+        stacked_type = 'nested'
+        aliases = ['index']
+        aliases_only = True
+        arguments = [
+            (['identifier'], {
+                'help': 'search index identifier',
+                'action': 'store',
+            }),
+        ]
+
+    @controller.expose(hide=True, aliases=['help'])
+    def default(self):
+        self.app.args.print_usage()
+
+    @controller.expose()
+    def drop(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/index/%s/drop' % self.app.pargs.identifier
+        resp, content = http_client.request(base_url + path)
+        results = json.loads(content)
+        print '%(status)d %(message)s' % results
+
+    @controller.expose()
+    def reindex(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/%s/reindex' % self.app.pargs.identifier
+        resp, content = http_client.request(base_url + path)
+        results = json.loads(content)
+        print '%(status)d %(message)s' % results
+
 class VolumeGetController(controller.CementBaseController):
     class Meta:
         label = 'volume_get'
@@ -173,15 +213,17 @@ class VolumeSearchController(controller.CementBaseController):
         resp, content = http_client.request(base_url + path)
         volumes = json.loads(content)
         for volume in volumes['results']:
-            print '%7s %4s %4s %s' % (
+            print '%7s %4s %4s %s [%s]' % (
                 volume['volume_id'],
                 volume['start_year'],
                 volume.get('issue_count', ''),
                 volume['name'],
+                volume['id'],
             )
 
 def load():
     handler.register(VolumeController)
+    handler.register(IndexController)
     handler.register(VolumeAddController)
     handler.register(VolumeGetController)
     #handler.register(VolumeRefreshController)
