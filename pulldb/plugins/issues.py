@@ -50,7 +50,7 @@ class IndexController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/%s/reindex' % self.app.pargs.identifier
+        path = '/api/issues/%s/reindex' % self.app.pargs.identifier
         resp, content = http_client.request(base_url + path)
         results = json.loads(content)
         print '%(status)d %(message)s' % results
