@@ -69,11 +69,15 @@ class VolumeGetController(controller.CementBaseController):
 
     @controller.expose(hide=True)
     def default(self):
+        self.app.args.print_usage()
+
+    @controller.expose()
+    def get(self):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/get/%s' % self.app.pargs.identifier
+        path = '/api/volumes/%s/get' % self.app.pargs.identifier
         resp, content = http_client.request(base_url + path)
         result = json.loads(content)
         if result['status'] == 200:
@@ -81,6 +85,29 @@ class VolumeGetController(controller.CementBaseController):
                 result['volume']['identifier'],
                 result['volume']['name'],
             )
+        else:
+            print '%d %s' % (
+                result['status'],
+                result['message'],
+            )
+
+    @controller.expose()
+    def list(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/%s/list' % self.app.pargs.identifier
+        resp, content = http_client.request(base_url + path)
+        result = json.loads(content)
+        if result['status'] == 200:
+            for issue in result['results']:
+                print '%7s %s %s %s' % (
+                    issue['identifier'],
+                    issue['pubdate'],
+                    result['volume']['name'],
+                    issue['issue_number'],
+                )
         else:
             print '%d %s' % (
                 result['status'],
