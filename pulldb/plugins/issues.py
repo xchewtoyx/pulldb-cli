@@ -15,6 +15,46 @@ class IssueController(controller.CementBaseController):
     def default(self):
         self.app.args.print_help()
 
+class IndexController(controller.CementBaseController):
+    class Meta:
+        label = 'issue_index'
+        stacked_on = 'issue'
+        stacked_type = 'nested'
+        aliases = ['index']
+        aliases_only = True
+        arguments = [
+            (['identifier'], {
+                'help': 'search index identifier',
+                'action': 'store',
+            }),
+        ]
+
+    @controller.expose(hide=True, aliases=['help'])
+    def default(self):
+        self.app.args.print_usage()
+
+    @controller.expose()
+    def drop(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/issues/index/%s/drop' % self.app.pargs.identifier
+        resp, content = http_client.request(base_url + path)
+        results = json.loads(content)
+        print '%(status)d %(message)s' % results
+
+    @controller.expose()
+    def reindex(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/%s/reindex' % self.app.pargs.identifier
+        resp, content = http_client.request(base_url + path)
+        results = json.loads(content)
+        print '%(status)d %(message)s' % results
+
 class IssueGetController(controller.CementBaseController):
     class Meta:
         label = 'issue_get'
@@ -104,6 +144,7 @@ class IssueSearchController(controller.CementBaseController):
 
 def load():
     handler.register(IssueController)
+    handler.register(IndexController)
     handler.register(IssueGetController)
     handler.register(IssueRefreshController)
     handler.register(IssueSearchController)
