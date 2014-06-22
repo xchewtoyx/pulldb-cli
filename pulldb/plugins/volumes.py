@@ -121,9 +121,10 @@ class VolumeGetController(controller.CementBaseController):
         resp, content = http_client.request(base_url + path)
         result = json.loads(content)
         if result['status'] == 200:
-            print '%7s %s' % (
+            print '%7s %s %s' % (
                 result['volume']['identifier'],
                 result['volume']['name'],
+                result['volume']['publisher'],
             )
         else:
             print '%d %s' % (

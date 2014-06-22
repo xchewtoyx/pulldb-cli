@@ -99,8 +99,8 @@ class PullInfo(controller.CementBaseController):
         )
         if resp.status != 200:
             self.app.log.error('%r %r' % (resp, content))
-        else:
             print content
+        else:
             results = json.loads(content)
             print '%(status)d %(message)s' % results
 
