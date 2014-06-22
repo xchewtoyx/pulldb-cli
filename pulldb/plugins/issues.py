@@ -77,7 +77,16 @@ class IssueGetController(controller.CementBaseController):
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/issues/get/%s' % self.app.pargs.identifier
         resp, content = http_client.request(base_url + path)
-        print content
+        if resp.status != 200:
+            print resp, content
+        else:
+            result = json.loads(content)
+            for issue in result['results']:
+                print issue.keys()
+                print "%7s %10s %s [%s]" % (
+                    issue['issue']['identifier'], issue['issue']['pubdate'],
+                    issue['issue']['name'], issue['issue']['key']
+                )
 
 class IssueRefreshController(controller.CementBaseController):
     class Meta:

@@ -19,16 +19,17 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/pulls/list'
+        path = '/api/pulls/list/all'
         resp, content = http_client.request(base_url + path)
+        print content
         pull_list = json.loads(content)
         for pull in pull_list['results']:
             print "%6s %4s %s %s %r" % (
-                pull['issue']['identifier'],
-                pull['issue']['pubdate'],
-                pull['volume']['name'],
-                pull['issue']['issue_number'],
-                pull['pull']['read'],
+                pull['issue'].get('identifier'),
+                pull['issue'].get('pubdate'),
+                pull['volume'].get('name'),
+                pull['issue'].get('issue_number'),
+                pull['pull'].get('read'),
             )
 
     @controller.expose()
@@ -37,7 +38,7 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/pulls/new'
+        path = '/api/pulls/list/new'
         resp, content = http_client.request(base_url + path)
         if resp.status == 200:
             pull_list = json.loads(content)
@@ -58,16 +59,65 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/pulls/unread'
+        path = '/api/pulls/list/unread'
         resp, content = http_client.request(base_url + path)
+        if resp.status != 200:
+            print resp, content
         pull_list = json.loads(content)
         for pull in pull_list['results']:
+            if not pull:
+                print 'null'
+                continue
             print "%6s %10s %s %s" % (
-                pull['issue']['identifier'],
-                pull['issue']['pubdate'],
-                pull['volume']['name'],
-                pull['issue']['issue_number'],
+                pull['issue'].get('identifier'),
+                pull['issue'].get('pubdate'),
+                pull['volume'].get('name'),
+                pull['issue'].get('issue_number'),
             )
+
+class PullInfo(controller.CementBaseController):
+    class Meta:
+        label = 'pull_info'
+        stacked_on = 'pull'
+        stacked_type = 'nested'
+        aliases = ['info']
+        aliases_only = True
+        arguments = [
+            (['identifier'], {
+                'help': 'Comicvine issue id',
+                'action': 'store',
+            }),
+        ]
+
+    def fetch_pull(self, path):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        resp, content = http_client.request(
+            base_url + path,
+        )
+        if resp.status != 200:
+            self.app.log.error('%r %r' % (resp, content))
+        else:
+            print content
+            results = json.loads(content)
+            print '%(status)d %(message)s' % results
+
+    @controller.expose(hide=True)
+    def default(self):
+        self.app.args.print_help()
+
+    @controller.expose()
+    def get(self):
+        path = '/api/pulls/%s/get' % self.app.pargs.identifier
+        self.fetch_pull(path)
+
+    @controller.expose()
+    def refresh(self):
+        path = '/api/pulls/%s/refresh' % self.app.pargs.identifier
+        self.fetch_pull(path)
+
 
 class UpdatePulls(controller.CementBaseController):
     class Meta:
@@ -135,4 +185,5 @@ class UpdatePulls(controller.CementBaseController):
 
 def load():
     handler.register(PullsController)
+    handler.register(PullInfo)
     handler.register(UpdatePulls)
