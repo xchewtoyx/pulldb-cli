@@ -1,4 +1,6 @@
+from datetime import datetime
 import json
+from operator import itemgetter
 
 from cement.core import controller, handler
 from dateutil.parser import parse as parse_date
@@ -8,29 +10,59 @@ class PullsController(controller.CementBaseController):
         label = 'pull'
         stacked_on = 'base'
         stacked_type = 'nested'
+        arguments = [
+            (['--raw'], {
+                'help': 'display raw json output',
+                'action': 'store_true',
+            }),
+            (['--nocontext'], {
+                'help': 'do not request context information',
+                'action': 'store_true',
+            }),
+            (['--weighted'], {
+                'help': ('sort pulls by weight rather than pubdate where '
+                         'appropriate'),
+                'action': 'store_true',
+            }),
+        ]
+
+    def _weight_key(self, pull):
+        return pull.get('weight')
+
+    def _date_key(self, pull):
+        return pull.get('pubdate')
 
     @controller.expose(hide=True)
     def default(self):
         self.app.args.print_help()
 
-    @controller.expose()
+    @controller.expose(help='List all pulls')
     def list(self):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/pulls/list/all'
+        if self.app.pargs.nocontext:
+            path = '/api/pulls/list/all'
+        else:
+            path = '/api/pulls/list/all?context=1'
+
         resp, content = http_client.request(base_url + path)
-        print content
-        pull_list = json.loads(content)
-        for pull in pull_list['results']:
-            print "%6s %4s %s %s %r" % (
-                pull['issue'].get('identifier'),
-                pull['issue'].get('pubdate'),
-                pull['volume'].get('name'),
-                pull['issue'].get('issue_number'),
-                pull['pull'].get('read'),
-            )
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                pull_list = json.loads(content)
+                for pull in pull_list['results']:
+                    print "%6s %4s %s %s %r" % (
+                        pull['pull'].get('issue_id'),
+                        pull['pull'].get('pubdate'),
+                        pull['volume'].get('name'),
+                        pull['issue'].get('issue_number'),
+                        pull['pull'].get('read'),
+                    )
+        else:
+            print resp, content
 
     @controller.expose()
     def new(self):
@@ -38,18 +70,29 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/pulls/list/new'
+        if self.app.pargs.nocontext:
+            path = '/api/pulls/list/new'
+        else:
+            path = '/api/pulls/list/new'
         resp, content = http_client.request(base_url + path)
         if resp.status == 200:
-            pull_list = json.loads(content)
-            for pull in pull_list['results']:
-                pubdate = parse_date(pull['issue']['pubdate'])
-                print '%7s %10s %s %s' % (
-                    pull['issue']['identifier'],
-                    pubdate.strftime('%Y-%m-%d'),
-                    pull['volume']['name'],
-                    pull['issue']['issue_number'],
-                )
+            if self.app.pargs.raw:
+                print content
+            else:
+                pull_list = json.loads(content)
+                for pull in pull_list['results']:
+                    if not pull:
+                        self.app.log.error("Null result")
+                        continue
+                    if pull.get('pull', {}).get('pubdate'):
+                        pubdate = parse_date(pull['pull']['pubdate'])
+                    else:
+                        pubdate = datetime.min
+                    print '%7s %10s %s' % (
+                        pull['pull']['identifier'],
+                        pubdate.strftime('%Y-%m-%d'),
+                        pull['pull'].get('name'),
+                    )
         else:
             self.app.log.error(resp, content)
 
@@ -59,21 +102,38 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/pulls/list/unread'
+        params = []
+        if not self.app.pargs.nocontext and False:
+            params.append('context=1')
+        if not self.app.pargs.weighted:
+            params.append('weighted=1')
+        path = '/api/pulls/list/unread?%s' % '&'.join(params)
         resp, content = http_client.request(base_url + path)
-        if resp.status != 200:
-            print resp, content
-        pull_list = json.loads(content)
-        for pull in pull_list['results']:
-            if not pull:
-                print 'null'
-                continue
-            print "%6s %10s %s %s" % (
-                pull['issue'].get('identifier'),
-                pull['issue'].get('pubdate'),
-                pull['volume'].get('name'),
-                pull['issue'].get('issue_number'),
-            )
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                pull_list = json.loads(content)
+                if self.app.pargs.weighted:
+                    sortkey=self._weight_key
+                else:
+                    sortkey=self._date_key
+                sorted_pulls = sorted(pull_list['results'], key=sortkey)
+                for pull in sorted_pulls:
+                    pull = pull
+                    if not pull:
+                        print 'null'
+                        continue
+                    print "%05.f %s +%s<%s> {%s} [%s]" % (
+                        float(pull['pull'].get('weight', 0.0))*10000,
+                        pull['pull'].get('name'),
+                        pull['pull'].get('stream_id', ''),
+                        pull['pull'].get('shard', ''),
+                        pull['pull'].get('volume_id', ''),
+                        pull['pull'].get('issue_id'),
+                    )
+        else:
+            self.app.log.error(resp, content)
 
 class PullInfo(controller.CementBaseController):
     class Meta:
@@ -101,6 +161,7 @@ class PullInfo(controller.CementBaseController):
             self.app.log.error('%r %r' % (resp, content))
             print content
         else:
+            print content
             results = json.loads(content)
             print '%(status)d %(message)s' % results
 
@@ -169,6 +230,12 @@ class UpdatePulls(controller.CementBaseController):
     def add(self):
         path = '/api/pulls/add'
         list_key = 'issues'
+        self.post_list(path, list_key)
+
+    @controller.expose()
+    def pull(self):
+        path = '/api/pulls/update'
+        list_key = 'pull'
         self.post_list(path, list_key)
 
     @controller.expose()
