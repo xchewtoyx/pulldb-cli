@@ -124,8 +124,8 @@ class PullsController(controller.CementBaseController):
                     if not pull:
                         print 'null'
                         continue
-                    print "%05.f %s +%s<%s> {%s} [%s]" % (
-                        float(pull['pull'].get('weight', 0.0))*10000,
+                    print "%06.f %s +%s<%s> {%s} [%s]" % (
+                        float(pull['pull'].get('weight', 0.0))*1e6,
                         pull['pull'].get('name'),
                         pull['pull'].get('stream_id', ''),
                         pull['pull'].get('shard', ''),
