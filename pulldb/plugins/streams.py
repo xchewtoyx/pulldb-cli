@@ -52,9 +52,10 @@ class StreamInfo(controller.CementBaseController):
         if resp.status != 200:
             self.app.log.error('%r %r' % (resp, content))
         else:
-            print content
             results = json.loads(content)
             print '%(status)d %(message)s' % results
+            for result in results['results']:
+                print result
 
     @controller.expose(hide=True)
     def default(self):
