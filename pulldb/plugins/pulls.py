@@ -124,13 +124,14 @@ class PullsController(controller.CementBaseController):
                     if not pull:
                         print 'null'
                         continue
-                    print "%06.f %s +%s<%s> {%s} [%s]" % (
+                    print "%06.f %s +%s<%s> {%s} [%s] (%s)" % (
                         float(pull['pull'].get('weight', 0.0))*1e6,
                         pull['pull'].get('name'),
                         pull['pull'].get('stream_id', ''),
                         pull['pull'].get('shard', ''),
                         pull['pull'].get('volume_id', ''),
                         pull['pull'].get('issue_id'),
+                        pull['pull'].get('publisher_id'),
                     )
         else:
             self.app.log.error(resp, content)
