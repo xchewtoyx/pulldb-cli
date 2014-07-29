@@ -230,6 +230,8 @@ class UpdatePulls(controller.CementBaseController):
             print '%d issues failed:\n%r' % (len(failed), failed)
             added = results['results'].get('added', [])
             print '%d issues added:\n%r' % (len(added), added)
+            removed = results['results'].get('removed', [])
+            print '%d issues removed:\n%r' % (len(removed), removed)
             updated = results['results'].get('updated', [])
             print '%d issues updated:\n%r' % (len(updated), updated)
             skipped = results['results'].get('skipped', [])
@@ -255,6 +257,12 @@ class UpdatePulls(controller.CementBaseController):
     def read(self):
         path = '/api/pulls/update'
         list_key = 'read'
+        self.post_list(path, list_key)
+
+    @controller.expose()
+    def remove(self):
+        path = '/api/pulls/remove'
+        list_key = 'issues'
         self.post_list(path, list_key)
 
     @controller.expose()
