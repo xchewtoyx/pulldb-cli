@@ -105,6 +105,14 @@ class VolumeGetController(controller.CementBaseController):
                 'help': 'Comicvine identifier for volume',
                 'action': 'store',
             }),
+            (['--context'], {
+                'help': 'Request context information',
+                'action': 'store_true',
+            }),
+            (['--raw'], {
+                'help': 'Print raw json response',
+                'action': 'store_true',
+            }),
         ]
 
     @controller.expose(hide=True)
@@ -118,9 +126,13 @@ class VolumeGetController(controller.CementBaseController):
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/volumes/%s/get' % self.app.pargs.identifier
+        if self.app.pargs.context:
+            path = path + '?context=1'
         resp, content = http_client.request(base_url + path)
         result = json.loads(content)
-        if result['status'] == 200:
+        if self.app.pargs.raw:
+            print content
+        elif result['status'] == 200:
             result = result['results'][0]
             print '%7s %s %s' % (
                 result['volume']['identifier'],
@@ -140,9 +152,13 @@ class VolumeGetController(controller.CementBaseController):
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/volumes/%s/list' % self.app.pargs.identifier
+        if self.app.pargs.context:
+            path = path + '?context=1'
         resp, content = http_client.request(base_url + path)
         result = json.loads(content)
-        if result['status'] == 200:
+        if self.app.pargs.raw:
+            print content
+        elif result['status'] == 200:
             for issue in result['results']:
                 print '%7s %s %s %s' % (
                     issue['identifier'],

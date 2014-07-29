@@ -15,8 +15,8 @@ class PullsController(controller.CementBaseController):
                 'help': 'display raw json output',
                 'action': 'store_true',
             }),
-            (['--nocontext'], {
-                'help': 'do not request context information',
+            (['--context'], {
+                'help': 'Request context information',
                 'action': 'store_true',
             }),
             (['--weighted'], {
@@ -42,10 +42,10 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        if self.app.pargs.nocontext:
-            path = '/api/pulls/list/all'
-        else:
+        if self.app.pargs.context:
             path = '/api/pulls/list/all?context=1'
+        else:
+            path = '/api/pulls/list/all'
 
         resp, content = http_client.request(base_url + path)
         if resp.status == 200:
@@ -70,8 +70,8 @@ class PullsController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        if self.app.pargs.nocontext:
-            path = '/api/pulls/list/new'
+        if self.app.pargs.context:
+            path = '/api/pulls/list/new?context=1'
         else:
             path = '/api/pulls/list/new'
         resp, content = http_client.request(base_url + path)
@@ -103,7 +103,7 @@ class PullsController(controller.CementBaseController):
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
         params = []
-        if not self.app.pargs.nocontext and False:
+        if self.app.pargs.context:
             params.append('context=1')
         if not self.app.pargs.weighted:
             params.append('weighted=1')
@@ -144,6 +144,14 @@ class PullInfo(controller.CementBaseController):
         aliases = ['info']
         aliases_only = True
         arguments = [
+            (['--raw'], {
+                'help': 'display raw json output',
+                'action': 'store_true',
+            }),
+            (['--context'], {
+                'help': 'Request context information',
+                'action': 'store_true',
+            }),
             (['identifier'], {
                 'help': 'Comicvine issue id',
                 'action': 'store',
@@ -158,7 +166,9 @@ class PullInfo(controller.CementBaseController):
         resp, content = http_client.request(
             base_url + path,
         )
-        if resp.status != 200:
+        if self.app.pargs.raw:
+            print content
+        elif resp.status != 200:
             self.app.log.error('%r %r' % (resp, content))
             print content
         else:
@@ -173,6 +183,8 @@ class PullInfo(controller.CementBaseController):
     @controller.expose()
     def get(self):
         path = '/api/pulls/%s/get' % self.app.pargs.identifier
+        if self.app.pargs.context:
+            path = path + '?context=1'
         self.fetch_pull(path)
 
     @controller.expose()

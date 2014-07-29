@@ -25,7 +25,7 @@ class StreamsController(controller.CementBaseController):
             print resp, content
         else:
             result = json.loads(content)
-            print result
+            print content
 
 class StreamInfo(controller.CementBaseController):
     class Meta:

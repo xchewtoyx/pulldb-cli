@@ -7,6 +7,16 @@ class SubscriptionController(controller.CementBaseController):
         label = 'subscription'
         stacked_on = 'base'
         stacked_type = 'nested'
+        arguments = [
+            (['--raw'], {
+                'help': 'display raw json output',
+                'action': 'store_true',
+            }),
+            (['--context'], {
+                'help': 'Request context information',
+                'action': 'store_true',
+            }),
+        ]
 
     @controller.expose(hide=True)
     def default(self):
@@ -19,14 +29,18 @@ class SubscriptionController(controller.CementBaseController):
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/subscriptions/list'
+        if self.app.pargs.context:
+            path = path + '?context=1'
         resp, content = http_client.request(base_url + path)
-        if resp.status == 200:
+        if self.app.pargs.raw:
+            print content
+        elif resp.status == 200:
             subscriptions = json.loads(content)
             for subscription in subscriptions['results']:
                 print "%6s %4s %s" % (
-                    subscription['volume']['identifier'],
-                    subscription['volume']['start_year'],
-                    subscription['volume']['name'],
+                    subscription['subscription']['volume_id'],
+                    subscription['subscription']['start_date'],
+                    subscription.get('volume', {}).get('name'),
                 )
         else:
             self.app.log.error('Unable to load content:\n%r\n\n%r' % (
