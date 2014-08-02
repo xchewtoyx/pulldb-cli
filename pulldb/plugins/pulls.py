@@ -192,6 +192,32 @@ class PullInfo(controller.CementBaseController):
         path = '/api/pulls/%s/refresh' % self.app.pargs.identifier
         self.fetch_pull(path)
 
+class StreamRefresh(controller.CementBaseController):
+    class Meta:
+        label = 'pull_stream'
+        stacked_on = 'pull'
+        stacked_type = 'nested'
+        aliases = ['restream']
+        aliases_only = True
+        arguments = [
+            (['--shard', '-s'], {
+                'help': 'Shard to restream',
+                'action': 'store',
+                'type': int,
+                'default': -1,
+            }),
+        ]
+
+    @controller.expose()
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'batch_url')
+        path = '/batch/pulls/update/streams?shard=%d' % self.app.pargs.shard
+        resp, content = http_client.request(base_url + path)
+        print content
+
 
 class UpdatePulls(controller.CementBaseController):
     class Meta:
@@ -271,7 +297,9 @@ class UpdatePulls(controller.CementBaseController):
         list_key = 'unread'
         self.post_list(path, list_key)
 
+
 def load():
     handler.register(PullsController)
     handler.register(PullInfo)
+    handler.register(StreamRefresh)
     handler.register(UpdatePulls)
