@@ -180,15 +180,11 @@ class VolumeRefreshController(controller.CementBaseController):
         aliases = ['refresh']
         aliases_only = True
         arguments = [
-            (['--shard'], {
+            (['--shard', '-s'], {
                 'help': 'Shard number to process',
                 'action': 'store',
                 'type': int,
-            }),
-            (['--shard_count'], {
-                'help': 'Total number of shards',
-                'action': 'store',
-                'type': int,
+                'default': -1,
             }),
         ]
 
@@ -197,9 +193,8 @@ class VolumeRefreshController(controller.CementBaseController):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
-        base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/refresh/%s/%s' % (
-            self.app.pargs.shard_count,
+        base_url = self.app.config.get('base', 'batch_url')
+        path = '/batch/volumes/refresh?shard=%s' % (
             self.app.pargs.shard,
         )
         resp, content = http_client.request(base_url + path)
@@ -244,5 +239,5 @@ def load():
     handler.register(IndexController)
     handler.register(VolumeAddController)
     handler.register(VolumeGetController)
-    #handler.register(VolumeRefreshController)
+    handler.register(VolumeRefreshController)
     handler.register(VolumeSearchController)
