@@ -88,6 +88,41 @@ class AddSubscription(controller.CementBaseController):
             skipped = results['results'].get('skipped', [])
             print '%d issues skipped:\n%r' % (len(skipped), skipped)
 
+class CheckShard(controller.CementBaseController):
+    class Meta:
+        label = 'subscription_check_shard'
+        stacked_on = 'subscription'
+        stacked_type = 'nested'
+        aliases = ['check']
+        aliases_only = True
+        arguments = [
+            (['--shard', '-s'], {
+                'help': 'Shard to check for updates',
+                'action': 'store',
+                'default': -1,
+                'type': int,
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'batch_url')
+        path = '/batch/subscriptions/update?shard=%d' % (
+            self.app.pargs.shard,
+        )
+        resp, content = http_client.request(
+            base_url + path,
+        )
+        if resp.status != 200:
+            self.app.log.error('%r %r' % (resp, content))
+        else:
+            print base_url+path
+            results = json.loads(content)
+            print 'Found %d updates' % results['updated']
+
 class UpdateSubscription(controller.CementBaseController):
     class Meta:
         label = 'subscription_update'
@@ -140,4 +175,5 @@ class UpdateSubscription(controller.CementBaseController):
 def load():
     handler.register(SubscriptionController)
     handler.register(AddSubscription)
+    handler.register(CheckShard)
     handler.register(UpdateSubscription)
