@@ -214,8 +214,32 @@ class VolumeSearchController(controller.CementBaseController):
             }),
         ]
 
-    @controller.expose(hide=True)
+    @controller.expose(aliases=['help'], hide=True)
     def default(self):
+        self.app.args.print_help()
+
+    @controller.expose(hide=True)
+    def comicvine(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/search/comicvine?%s' % urlencode({
+            'q': self.app.pargs.query,
+        })
+        resp, content = http_client.request(base_url + path)
+        volumes = json.loads(content)
+        for volume in volumes['results']:
+            print '%7s %4s %4s %s [%s]' % (
+                volume['id'],
+                volume['start_year'],
+                volume['count_of_issues'],
+                volume['name'],
+                volume['id'],
+            )
+
+    @controller.expose(hide=True)
+    def local(self):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
