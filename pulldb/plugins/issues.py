@@ -94,6 +94,64 @@ class IssueGetController(controller.CementBaseController):
                     issue['issue']['name'], issue['issue']['key']
                 )
 
+class IssueListController(controller.CementBaseController):
+    class Meta:
+        label = 'issue_list'
+        stacked_on = 'issue'
+        stacked_type = 'nested'
+        aliases = ['list']
+        aliases_only = True
+        arguments = [
+            (['--context'], {
+                'help': 'Include object context',
+                'action': 'store_true',
+            }),
+            (['--sort_key', '-k'], {
+                'help': 'Field to sort on',
+                'action': 'store',
+            }),
+            (['--reverse', '-r'], {
+                'help': 'Reverse sort order',
+                'action': 'store_true',
+            }),
+            (['--raw'], {
+                'help': 'Output raw json response',
+                'action': 'store_true',
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/issues/list'
+        params = {}
+        if self.app.pargs.context:
+            params['context'] = 1
+        if self.app.pargs.sort_key:
+            params['sort_key'] = self.app.pargs.sort_key
+            if self.app.pargs.reverse:
+                params['sort_order'] = 'desc'
+            else:
+                params['sort_order'] = 'asc'
+        if params:
+            path = path + '?%s' % urlencode(params)
+        resp, content = http_client.request(base_url + path)
+        if resp.status != 200:
+            print resp, content
+        elif self.app.pargs.raw:
+            print content
+        else:
+            result = json.loads(content)
+            for issue in result['results']:
+                print issue.keys()
+                print "%7s %10s %s [%s]" % (
+                    issue['issue']['identifier'], issue['issue']['pubdate'],
+                    issue['issue']['name'], issue['issue']['key']
+                )
+
 class IssueRefreshController(controller.CementBaseController):
     class Meta:
         label = 'issue_refresh'
@@ -161,5 +219,6 @@ def load():
     handler.register(IssueController)
     handler.register(IndexController)
     handler.register(IssueGetController)
+    handler.register(IssueListController)
     handler.register(IssueRefreshController)
     handler.register(IssueSearchController)
