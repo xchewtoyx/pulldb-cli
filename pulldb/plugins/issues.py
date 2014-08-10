@@ -67,6 +67,10 @@ class IssueGetController(controller.CementBaseController):
                 'help': 'Comicvine identifier for issue',
                 'action': 'store',
             }),
+            (['--raw'], {
+                'help': 'Output raw json response',
+                'action': 'store_true',
+            }),
         ]
 
     @controller.expose(hide=True)
@@ -79,6 +83,8 @@ class IssueGetController(controller.CementBaseController):
         resp, content = http_client.request(base_url + path)
         if resp.status != 200:
             print resp, content
+        elif self.app.pargs.raw:
+            print content
         else:
             result = json.loads(content)
             for issue in result['results']:
