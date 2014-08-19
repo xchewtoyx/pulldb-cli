@@ -96,6 +96,26 @@ class PullsController(controller.CementBaseController):
         else:
             self.app.log.error(resp, content)
 
+    @controller.expose(help='Pull statistics')
+    def stats(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/pulls/stats'
+        resp, content = http_client.request(base_url + path)
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                pull_stats = json.loads(content)
+                counts = pull_stats['counts']
+                print 'New pulls: %d' % counts['new']
+                print 'Unread pulls: %d' % counts['unread']
+                print 'Read pulls: %d' % counts['read']
+        else:
+            self.app.log.error(resp, content)
+	
     @controller.expose()
     def unread(self):
         auth_handler = handler.get('auth', 'oauth2')()
@@ -232,6 +252,10 @@ class UpdatePulls(controller.CementBaseController):
                 'action': 'store',
                 'nargs': '+',
             }),
+            (['--raw'], {
+                'help': 'Display raw response',
+                'action': 'store_true',
+            }),
         ]
 
     def post_list(self, path, list_key):
@@ -250,6 +274,8 @@ class UpdatePulls(controller.CementBaseController):
         )
         if resp.status != 200:
             self.app.log.error('%r %r' % (resp, content))
+        if self.app.pargs.raw:
+            print content
         else:
             results = json.loads(content)
             failed = results['results'].get('failed', [])
@@ -289,6 +315,12 @@ class UpdatePulls(controller.CementBaseController):
     def remove(self):
         path = '/api/pulls/remove'
         list_key = 'issues'
+        self.post_list(path, list_key)
+
+    @controller.expose()
+    def unpull(self):
+        path = '/api/pulls/update'
+        list_key = 'unpull'
         self.post_list(path, list_key)
 
     @controller.expose()
