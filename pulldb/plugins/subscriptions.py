@@ -88,6 +88,50 @@ class AddSubscription(controller.CementBaseController):
             skipped = results['results'].get('skipped', [])
             print '%d issues skipped:\n%r' % (len(skipped), skipped)
 
+class RemoveSubscription(controller.CementBaseController):
+    class Meta:
+        label = 'subscription_remove'
+        stacked_on = 'subscription'
+        stacked_type = 'nested'
+        aliases = ['remove']
+        aliases_only = True
+        arguments = [
+            (['ids'], {
+                'help': 'Comicvine identifier for volume',
+                'action': 'store',
+                'nargs': '+',
+            }),
+            (['--raw'], {
+                'help': 'display raw json output',
+                'action': 'store_true',
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/subscriptions/remove'
+        data = json.dumps({
+            'volumes': self.app.pargs.ids,
+        })
+        resp, content = http_client.request(
+            base_url + path,
+            method='POST',
+            headers={'Content-Type': 'application/json'},
+            body=data,
+        )
+        if resp.status != 200:
+            self.app.log.error('%r %r' % (resp, content))
+        elif self.app.pargs.raw:
+            print content
+        else:
+            results = json.loads(content)
+            removed = results['results']
+            print '%d issues removed:\n%r' % (len(removed), removed)
+
 class CheckShard(controller.CementBaseController):
     class Meta:
         label = 'subscription_check_shard'
@@ -175,5 +219,6 @@ class UpdateSubscription(controller.CementBaseController):
 def load():
     handler.register(SubscriptionController)
     handler.register(AddSubscription)
+    handler.register(RemoveSubscription)
     handler.register(CheckShard)
     handler.register(UpdateSubscription)
