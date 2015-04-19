@@ -216,7 +216,7 @@ class UpdateSubscription(controller.CementBaseController):
             skipped = results['results'].get('skipped', [])
             print '%d issues skipped:\n%r' % (len(skipped), skipped)
 
-def load():
+def load(app=None):
     handler.register(SubscriptionController)
     handler.register(AddSubscription)
     handler.register(RemoveSubscription)

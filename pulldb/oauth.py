@@ -57,6 +57,6 @@ def load_google_args(app):
     app.args._add_container_actions(tools.argparser)
     app.args.set_defaults(noauth_local_webserver=True)
 
-def load():
+def load(app=None):
     handler.register(OauthHandler)
     hook.register('pre_argument_parsing', load_google_args)

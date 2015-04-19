@@ -227,7 +227,7 @@ class IssueSearchController(controller.CementBaseController):
                 issue.get('name', 'key=%s' % issue['id']),
             )
 
-def load():
+def load(app=None):
     handler.register(IssueController)
     handler.register(IndexController)
     handler.register(IssueGetController)

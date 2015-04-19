@@ -177,7 +177,7 @@ class UpdateStreams(controller.CementBaseController):
             }
         self.post_update(path, [update])
 
-def load():
+def load(app=None):
     handler.register(StreamsController)
     handler.register(StreamInfo)
     handler.register(UpdateStreams)

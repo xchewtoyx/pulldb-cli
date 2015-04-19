@@ -258,7 +258,7 @@ class VolumeSearchController(controller.CementBaseController):
                 volume['id'],
             )
 
-def load():
+def load(app=None):
     handler.register(VolumeController)
     handler.register(IndexController)
     handler.register(VolumeAddController)

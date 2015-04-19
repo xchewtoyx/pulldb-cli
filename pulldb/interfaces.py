@@ -7,5 +7,5 @@ class AuthInterface(interface.Interface):
     def _setup(app):
         pass
 
-def load():
+def load(app=None):
     handler.define(AuthInterface)

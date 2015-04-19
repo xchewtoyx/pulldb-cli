@@ -362,7 +362,7 @@ class UpdatePulls(controller.CementBaseController):
         self.post_list(path, list_key)
 
 
-def load():
+def load(app=None):
     handler.register(PullsController)
     handler.register(PullInfo)
     handler.register(RefreshPulls)
