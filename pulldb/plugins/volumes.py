@@ -180,6 +180,10 @@ class VolumeRefreshController(controller.CementBaseController):
         aliases = ['refresh']
         aliases_only = True
         arguments = [
+            (['--active'], {
+                'help': 'Process an active/fast shard',
+                'action': 'store_true',
+            }),
             (['--shard', '-s'], {
                 'help': 'Shard number to process',
                 'action': 'store',
@@ -194,7 +198,12 @@ class VolumeRefreshController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'batch_url')
-        path = '/batch/volumes/refresh?shard=%s' % (
+        if self.app.pargs.active:
+            active = '/active'
+        else:
+            active = ''
+        path = '/batch/volumes/refresh%s?shard=%s' % (
+            active,
             self.app.pargs.shard,
         )
         resp, content = http_client.request(base_url + path)
