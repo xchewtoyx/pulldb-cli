@@ -212,13 +212,17 @@ class VolumeSearchController(controller.CementBaseController):
                 'help': 'Search string',
                 'action': 'store',
             }),
+            (['--raw'], {
+                'help': 'Display raw json response',
+                'action': 'store_true',
+            }),
         ]
 
     @controller.expose(aliases=['help'], hide=True)
     def default(self):
         self.app.args.print_help()
 
-    @controller.expose(hide=True)
+    @controller.expose(help='Search comicvine database')
     def comicvine(self):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
@@ -228,17 +232,20 @@ class VolumeSearchController(controller.CementBaseController):
             'q': self.app.pargs.query,
         })
         resp, content = http_client.request(base_url + path)
-        volumes = json.loads(content)
-        for volume in volumes['results']:
-            print '%7s %4s %4s %s [%s]' % (
-                volume['id'],
-                volume['start_year'],
-                volume['count_of_issues'],
-                volume['name'],
-                volume['id'],
-            )
+        if self.app.pargs.raw:
+            print content
+        else:
+            volumes = json.loads(content)
+            for volume in volumes['results']:
+                print '%7s %4s %4s %s [%s]' % (
+                    volume['id'],
+                    volume['start_year'],
+                    volume['count_of_issues'],
+                    volume['name'],
+                    volume['id'],
+                )
 
-    @controller.expose(hide=True)
+    @controller.expose(help='Search the local index')
     def local(self):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
@@ -248,15 +255,18 @@ class VolumeSearchController(controller.CementBaseController):
             'q': self.app.pargs.query,
         })
         resp, content = http_client.request(base_url + path)
-        volumes = json.loads(content)
-        for volume in volumes['results']:
-            print '%7s %4s %4s %s [%s]' % (
-                volume['volume_id'],
-                volume['start_year'],
-                volume.get('issue_count', ''),
-                volume['name'],
-                volume['id'],
-            )
+        if self.app.pargs.raw:
+            print content
+        else:
+            volumes = json.loads(content)
+            for volume in volumes['results']:
+                print '%7s %4s %4s %s [%s]' % (
+                    volume['volume_id'],
+                    volume['start_year'],
+                    volume.get('issue_count', ''),
+                    volume['name'],
+                    volume['id'],
+                )
 
 def load(app=None):
     handler.register(VolumeController)

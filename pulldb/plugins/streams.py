@@ -8,6 +8,9 @@ class StreamsController(controller.CementBaseController):
         label = 'stream'
         stacked_on = 'base'
         stacked_type = 'nested'
+        arguments = [
+            (['--raw'], {'action': 'store_true'})
+        ]	
 
     @controller.expose(hide=True)
     def default(self):
@@ -21,11 +24,16 @@ class StreamsController(controller.CementBaseController):
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/streams/list'
         resp, content = http_client.request(base_url + path)
-        if resp.status != 200:
-            print resp, content
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                response = json.loads(content)
+                for result in response['results']:
+                    stream = result['stream']
+                    print '%-20s %4s' % (stream['name'], stream['length'])
         else:
-            result = json.loads(content)
-            print content
+            print resp, content
 
 class StreamInfo(controller.CementBaseController):
     class Meta:
