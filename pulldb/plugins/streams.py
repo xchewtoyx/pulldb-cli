@@ -10,7 +10,7 @@ class StreamsController(controller.CementBaseController):
         stacked_type = 'nested'
         arguments = [
             (['--raw'], {'action': 'store_true'})
-        ]	
+        ]
 
     @controller.expose(hide=True)
     def default(self):
@@ -185,7 +185,54 @@ class UpdateStreams(controller.CementBaseController):
             }
         self.post_update(path, [update])
 
+
+class StreamTask(controller.CementBaseController):
+    class Meta:
+        label = 'stream_task'
+        stacked_on = 'stream'
+        stacked_type = 'nested'
+        aliases = ['task']
+        aliases_only = True
+
+    def update_stream(self, path):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'batch_url')
+        resp, content = http_client.request(
+            base_url + path,
+        )
+        if resp.status != 200:
+            self.app.log.error('%r %r' % (resp, content))
+        else:
+            try:
+                results = json.loads(content)
+            except ValueError as err:
+                self.app.log.error(
+                    'Error fetching resource %r: got %r\n' % (path, content))
+                self.app.log.error(repr(err))
+            else:
+                print '%(status)d %(message)s' % results
+                for result in results['results']:
+                    print result
+
+    @controller.expose(hide=True)
+    def default(self):
+        self.app.args.print_help()
+
+    @controller.expose()
+    def counts(self):
+        path = '/batch/streams/updatecounts'
+        self.update_stream(path)
+
+    @controller.expose()
+    def weights(self):
+        path = '/batch/streams/updateweights'
+        self.update_stream(path)
+
+
 def load(app=None):
     handler.register(StreamsController)
     handler.register(StreamInfo)
     handler.register(UpdateStreams)
+    handler.register(StreamTask)
