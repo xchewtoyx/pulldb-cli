@@ -23,6 +23,10 @@ class PullsController(controller.CementBaseController):
                 'help': 'Reverse sort order',
                 'action': 'store_true',
             }),
+            (['--all'], {
+                'help': 'include ignored pulls in results',
+                'action': 'store_true',
+            }),
             (['--weighted'], {
                 'help': ('sort pulls by weight rather than pubdate where '
                          'appropriate'),
@@ -75,6 +79,8 @@ class PullsController(controller.CementBaseController):
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
         params = []
+        if self.app.pargs.all:
+            params.append("all=1")
         if self.app.pargs.context:
             params.append("context=1")
         if self.app.pargs.reverse:
