@@ -35,6 +35,29 @@ class StreamsController(controller.CementBaseController):
         else:
             print resp, content
 
+    def print_stats(self, stream):
+        print '{name:20s} {active:04d}/{total:04d} {backlog:d}'.format(**stream)
+
+    @controller.expose(help='Display stream statistics')
+    def stats(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/streams/stats'
+        resp, content = http_client.request(base_url + path)
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                response = json.loads(content)
+                for result in response['results']:
+                    stream = result['stream']
+                    self.print_stats(stream)
+        else:
+            print resp, content
+
+
 class StreamInfo(controller.CementBaseController):
     class Meta:
         label = 'stream_info'
@@ -43,6 +66,10 @@ class StreamInfo(controller.CementBaseController):
         aliases = ['info']
         aliases_only = True
         arguments = [
+            (['--raw'], {
+                'help': 'Print raw json response',
+                'action': 'store_true',
+            }),
             (['identifier'], {
                 'help': 'Comicvine issue id',
                 'action': 'store',
@@ -60,10 +87,13 @@ class StreamInfo(controller.CementBaseController):
         if resp.status != 200:
             self.app.log.error('%r %r' % (resp, content))
         else:
-            results = json.loads(content)
-            print '%(status)d %(message)s' % results
-            for result in results['results']:
-                print result
+            if self.app.pargs.raw:
+                print content
+            else:
+                results = json.loads(content)
+                print '%(status)d %(message)s' % results
+                for result in results['results']:
+                    print result
 
     @controller.expose(hide=True)
     def default(self):
@@ -212,9 +242,7 @@ class StreamTask(controller.CementBaseController):
                     'Error fetching resource %r: got %r\n' % (path, content))
                 self.app.log.error(repr(err))
             else:
-                print '%(status)d %(message)s' % results
-                for result in results['results']:
-                    print result
+                print content
 
     @controller.expose(hide=True)
     def default(self):
