@@ -4,9 +4,9 @@ from urllib import urlencode
 from cement.core import controller, handler
 from dateutil.parser import parse as parse_date
 
-class VolumeController(controller.CementBaseController):
+class ArcController(controller.CementBaseController):
     class Meta:
-        label = 'volume'
+        label = 'arc'
         stacked_on = 'base'
         stacked_type = 'nested'
 
@@ -14,16 +14,17 @@ class VolumeController(controller.CementBaseController):
     def default(self):
         self.app.args.print_help()
 
-class VolumeAddController(controller.CementBaseController):
+class ArcAddController(controller.CementBaseController):
     class Meta:
-        label = 'volume_add'
-        stacked_on = 'volume'
+        label = 'arc_add'
+        stacked_on = 'arc'
         stacked_type = 'nested'
         aliases = ['add']
         aliases_only = True
+        help = 'Add story arc'
         arguments = [
             (['ids'], {
-                'help': 'Comicvine identifier for volume',
+                'help': 'Comicvine identifier for arc',
                 'action': 'store',
                 'nargs': '+',
             }),
@@ -35,9 +36,9 @@ class VolumeAddController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/add'
+        path = '/api/arcs/add'
         data = json.dumps({
-            'volumes': self.app.pargs.ids,
+            'arcs': self.app.pargs.ids,
         })
         resp, content = http_client.request(
             base_url + path,
@@ -55,8 +56,8 @@ class VolumeAddController(controller.CementBaseController):
 
 class IndexController(controller.CementBaseController):
     class Meta:
-        label = 'volume_index'
-        stacked_on = 'volume'
+        label = 'arc_index'
+        stacked_on = 'arc'
         stacked_type = 'nested'
         aliases = ['index']
         aliases_only = True
@@ -77,7 +78,7 @@ class IndexController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/index/%s/drop' % self.app.pargs.identifier
+        path = '/api/arcs/index/%s/drop' % self.app.pargs.identifier
         resp, content = http_client.request(base_url + path)
         results = json.loads(content)
         print '%(status)d %(message)s' % results
@@ -88,21 +89,21 @@ class IndexController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/%s/reindex' % self.app.pargs.identifier
+        path = '/api/arcs/%s/reindex' % self.app.pargs.identifier
         resp, content = http_client.request(base_url + path)
         results = json.loads(content)
         print '%(status)d %(message)s' % results
 
-class VolumeGetController(controller.CementBaseController):
+class ArcGetController(controller.CementBaseController):
     class Meta:
-        label = 'volume_get'
-        stacked_on = 'volume'
+        label = 'arc_get'
+        stacked_on = 'arc'
         stacked_type = 'nested'
         aliases = ['get']
         aliases_only = True
         arguments = [
             (['identifier'], {
-                'help': 'Comicvine identifier for volume',
+                'help': 'Comicvine identifier for story arc',
                 'action': 'store',
             }),
             (['--context'], {
@@ -125,7 +126,7 @@ class VolumeGetController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/%s/get' % self.app.pargs.identifier
+        path = '/api/arcs/%s/get' % self.app.pargs.identifier
         if self.app.pargs.context:
             path = path + '?context=1'
         resp, content = http_client.request(base_url + path)
@@ -135,9 +136,9 @@ class VolumeGetController(controller.CementBaseController):
         elif result['status'] == 200:
             result = result['results'][0]
             print '%7s %s %s' % (
-                result['volume']['identifier'],
-                result['volume']['name'],
-                result['volume']['publisher'],
+                result['arc']['identifier'],
+                result['arc']['name'],
+                result['arc']['publisher'],
             )
         else:
             print '%d %s' % (
@@ -151,68 +152,31 @@ class VolumeGetController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/%s/list' % self.app.pargs.identifier
+        path = '/api/arcs/%s/list' % self.app.pargs.identifier
         if self.app.pargs.context:
             path = path + '?context=1'
         resp, content = http_client.request(base_url + path)
-        result = json.loads(content)
         if self.app.pargs.raw:
             print content
-        elif result['status'] == 200:
-            for issue in result['results']:
-                print '%7s %s %s %s' % (
-                    issue['identifier'],
-                    issue['pubdate'],
-                    result['volume']['name'],
-                    issue['issue_number'],
+        else:
+            result = json.loads(content)
+            if result['status'] == 200:
+                for issue in result['results']:
+                    print '%7s %s %s' % (
+                        issue['identifier'],
+                        issue['pubdate'],
+                        issue['name'],
+                    )
+            else:
+                print '%d %s' % (
+                    result['status'],
+                    result['message'],
                 )
-        else:
-            print '%d %s' % (
-                result['status'],
-                result['message'],
-            )
 
-class VolumeRefreshController(controller.CementBaseController):
+class ArcSearchController(controller.CementBaseController):
     class Meta:
-        label = 'volume_refresh'
-        stacked_on = 'volume'
-        stacked_type = 'nested'
-        aliases = ['refresh']
-        aliases_only = True
-        arguments = [
-            (['--active'], {
-                'help': 'Process an active/fast shard',
-                'action': 'store_true',
-            }),
-            (['--shard', '-s'], {
-                'help': 'Shard number to process',
-                'action': 'store',
-                'type': int,
-                'default': -1,
-            }),
-        ]
-
-    @controller.expose(hide=True)
-    def default(self):
-        auth_handler = handler.get('auth', 'oauth2')()
-        auth_handler._setup(self.app)
-        http_client = auth_handler.client()
-        base_url = self.app.config.get('base', 'batch_url')
-        if self.app.pargs.active:
-            active = '/active'
-        else:
-            active = ''
-        path = '/batch/volumes/refresh%s?shard=%s' % (
-            active,
-            self.app.pargs.shard,
-        )
-        resp, content = http_client.request(base_url + path)
-        print content
-
-class VolumeSearchController(controller.CementBaseController):
-    class Meta:
-        label = 'volume_search'
-        stacked_on = 'volume'
+        label = 'arc_search'
+        stacked_on = 'arc'
         stacked_type = 'nested'
         aliases = ['search']
         aliases_only = True
@@ -254,19 +218,18 @@ class VolumeSearchController(controller.CementBaseController):
             'page': self.app.pargs.page,
             'limit': self.app.pargs.limit,
         }
-        path = '/api/volumes/search/comicvine?%s' % (urlencode(params),)
+        path = '/api/arcs/search/comicvine?%s' % (urlencode(params),)
         resp, content = http_client.request(base_url + path)
         if self.app.pargs.raw:
             print content
         else:
-            volumes = json.loads(content)
-            for volume in volumes['results']:
-                print '%7s %4s %4s %s [%s]' % (
-                    volume['id'],
-                    volume['start_year'],
-                    volume['count_of_issues'],
-                    volume['name'],
-                    volume['id'],
+            arcs = json.loads(content)
+            for arc in arcs['results']:
+                print '%7s %4s %4s %s' % (
+                    arc['id'],
+                    arc.get('first_issue_date'),
+                    arc.get('count_of_issues'),
+                    arc['name'],
                 )
 
     @controller.expose(help='Search the local index')
@@ -275,27 +238,24 @@ class VolumeSearchController(controller.CementBaseController):
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
-        path = '/api/volumes/search?%s' % urlencode({
+        path = '/api/arcs/search/local?%s' % urlencode({
             'q': self.app.pargs.query,
         })
         resp, content = http_client.request(base_url + path)
         if self.app.pargs.raw:
             print content
         else:
-            volumes = json.loads(content)
-            for volume in volumes['results']:
-                print '%7s %4s %4s %s [%s]' % (
-                    volume['volume_id'],
-                    volume['start_year'],
-                    volume.get('issue_count', ''),
-                    volume['name'],
-                    volume['id'],
+            arcs = json.loads(content)
+            for arc in arcs['results']:
+                print '%7s %4s %4s' % (
+                    arc['arc_id'],
+                    arc.get('issue_count', ''),
+                    arc.get('name', ''),
                 )
 
 def load(app=None):
-    handler.register(VolumeController)
+    handler.register(ArcController)
     handler.register(IndexController)
-    handler.register(VolumeAddController)
-    handler.register(VolumeGetController)
-    handler.register(VolumeRefreshController)
-    handler.register(VolumeSearchController)
+    handler.register(ArcAddController)
+    handler.register(ArcGetController)
+    handler.register(ArcSearchController)
