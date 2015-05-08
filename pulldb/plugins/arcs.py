@@ -9,10 +9,36 @@ class ArcController(controller.CementBaseController):
         label = 'arc'
         stacked_on = 'base'
         stacked_type = 'nested'
+        arguments = [
+            (['--raw'], {
+                'help': 'Print raw json response',
+                'action': 'store_true',
+            }),
+        ]
 
     @controller.expose(hide=True)
     def default(self):
         self.app.args.print_help()
+
+    @controller.expose(help='Arc statistics')
+    def stats(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/arcs/stats'
+        resp, content = http_client.request(base_url + path)
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                issue_stats = json.loads(content)
+                counts = issue_stats['counts']
+                print 'Queued arcs: %d' % counts['queued']
+                print 'Unindexed arcs: %d' % counts['toindex']
+        else:
+            self.app.log.error(resp, content)
+
 
 class ArcAddController(controller.CementBaseController):
     class Meta:

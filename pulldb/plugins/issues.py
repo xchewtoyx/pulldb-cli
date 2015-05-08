@@ -21,7 +21,7 @@ class IssueController(controller.CementBaseController):
     def default(self):
         self.app.args.print_help()
 
-    @controller.expose(help='Pull statistics')
+    @controller.expose(help='issue statistics')
     def stats(self):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
