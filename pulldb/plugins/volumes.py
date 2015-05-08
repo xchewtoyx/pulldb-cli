@@ -155,10 +155,11 @@ class VolumeGetController(controller.CementBaseController):
         if self.app.pargs.context:
             path = path + '?context=1'
         resp, content = http_client.request(base_url + path)
-        result = json.loads(content)
         if self.app.pargs.raw:
             print content
-        elif result['status'] == 200:
+            return
+        result = json.loads(content)
+        if result['status'] == 200:
             for issue in result['results']:
                 print '%7s %s %s %s' % (
                     issue['identifier'],
