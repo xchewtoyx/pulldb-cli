@@ -10,10 +10,36 @@ class IssueController(controller.CementBaseController):
         label = 'issue'
         stacked_on = 'base'
         stacked_type = 'nested'
+        arguments = [
+            (['--raw'], {
+                'help': 'Output raw json response',
+                'action': 'store_true',
+            }),
+        ]
 
     @controller.expose(hide=True)
     def default(self):
         self.app.args.print_help()
+
+    @controller.expose(help='Pull statistics')
+    def stats(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/issues/stats'
+        resp, content = http_client.request(base_url + path)
+        if resp.status == 200:
+            if self.app.pargs.raw:
+                print content
+            else:
+                issue_stats = json.loads(content)
+                counts = issue_stats['counts']
+                print 'Queued issues: %d' % counts['queued']
+                print 'Unindexed issues: %d' % counts['toindex']
+        else:
+            self.app.log.error(resp, content)
+
 
 class IndexController(controller.CementBaseController):
     class Meta:
