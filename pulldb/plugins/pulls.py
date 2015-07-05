@@ -367,6 +367,18 @@ class UpdatePulls(controller.CementBaseController):
         list_key = 'unread'
         self.post_list(path, list_key)
 
+    @controller.expose()
+    def ignore(self):
+        path = '/api/pulls/update'
+        list_key = 'ignore'
+        self.post_list(path, list_key)
+
+    @controller.expose()
+    def unignore(self):
+        path = '/api/pulls/update'
+        list_key = 'unignore'
+        self.post_list(path, list_key)
+
 
 def load(app=None):
     handler.register(PullsController)
