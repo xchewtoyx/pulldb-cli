@@ -144,6 +144,10 @@ class IssueListController(controller.CementBaseController):
                 'help': 'Output raw json response',
                 'action': 'store_true',
             }),
+            (['--queued'], {
+                'help': 'Only list issues queued for refresh',
+                'action': 'store_true',
+            }),
         ]
 
     @controller.expose(hide=True)
@@ -154,6 +158,8 @@ class IssueListController(controller.CementBaseController):
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/issues/list'
         params = {}
+        if self.app.pargs.queued:
+            params['queued'] = 1
         if self.app.pargs.context:
             params['context'] = 1
         if self.app.pargs.sort_key:
