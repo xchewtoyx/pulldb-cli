@@ -104,6 +104,11 @@ class StreamInfo(controller.CementBaseController):
         path = '/api/streams/%s/get' % self.app.pargs.identifier
         self.fetch_stream(path)
 
+    @controller.expose(help='List unread pulls for stream')
+    def list(self):
+        path = '/api/streams/%s/list/unread' % self.app.pargs.identifier
+        self.fetch_stream(path)
+
     @controller.expose()
     def refresh(self):
         path = '/api/streams/%s/refresh' % self.app.pargs.identifier
