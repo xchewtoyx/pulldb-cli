@@ -14,6 +14,10 @@ class ArcController(controller.CementBaseController):
                 'help': 'Print raw json response',
                 'action': 'store_true',
             }),
+            (['--all'], {
+                'help': 'Include total count in statistics',
+                'action': 'store_true',
+            }),
         ]
 
     @controller.expose(hide=True)
@@ -27,6 +31,8 @@ class ArcController(controller.CementBaseController):
         http_client = auth_handler.client()
         base_url = self.app.config.get('base', 'base_url')
         path = '/api/arcs/stats'
+        if self.app.pargs.all:
+            path = '?'.join([path, 'all=1'])
         resp, content = http_client.request(base_url + path)
         if resp.status == 200:
             if self.app.pargs.raw:
