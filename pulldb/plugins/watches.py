@@ -37,11 +37,12 @@ class WatchController(controller.CementBaseController):
         elif resp.status == 200:
             watches = json.loads(content)
             for watch in watches['results']:
-                print "%8s%6s %4s %s" % (
+                print "%8s%6s %4s %s [%s]" % (
                     watch['watch']['collection_kind'],
                     watch['watch']['collection_id'],
                     watch['watch']['start_date'],
                     watch.get('collection', {}).get('name'),
+                    watch['watch']['key'],
                 )
         else:
             self.app.log.error('Unable to load content:\n%r\n\n%r' % (
