@@ -249,9 +249,54 @@ class UpdateWatch(controller.CementBaseController):
             skipped = results['results'].get('skipped', [])
             print '%d issues skipped:\n%r' % (len(skipped), skipped)
 
+class ListWatchPulls(controller.CementBaseController):
+    class Meta:
+        label = 'watch_pulls'
+        stacked_on = 'watch'
+        stacked_type = 'nested'
+        aliases = ['pulls']
+        aliases_only = True
+        arguments = [
+            (['--raw'], {
+                'help': 'display raw json output',
+                'action': 'store_true',
+            }),
+            (['watch'], {
+                'help': 'Key ID for watchlist',
+            })
+        ]
+
+    @controller.expose(hide=True, aliases=['help'])
+    def default(self):
+        self.app.args.print_help()
+
+    @controller.expose(
+        help='List ignored pulls for watchlist key'
+    )
+    def ignored(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/watches/%s/pulls/ignored' % self.app.pargs.watch
+        resp, content = http_client.request(
+            base_url + path,
+            method='GET',
+        )
+        if resp.status != 200:
+            self.app.log.error('%r %r' % (resp, content))
+        elif self.app.pargs.raw:
+            print content
+        else:
+            results = json.loads(content)
+            for result in results['results']:
+                print '%(id)8s %(name)s' % result['pull']
+
+
 def load(app=None):
     handler.register(WatchController)
     handler.register(AddWatch)
+    handler.register(ListWatchPulls)
     handler.register(RemoveWatch)
     handler.register(CheckShard)
     handler.register(UpdateWatch)
