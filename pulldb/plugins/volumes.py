@@ -222,8 +222,8 @@ class VolumeQueueController(controller.CementBaseController):
         auth_handler = handler.get('auth', 'oauth2')()
         auth_handler._setup(self.app)
         http_client = auth_handler.client()
-        base_url = self.app.config.get('base', 'batch_url')
-        path = '/batch/volumes/%s/queue' % (
+        base_url = self.app.config.get('base', 'base_url')
+        path = '/api/volumes/%s/queue' % (
             self.app.pargs.volume,
         )
         resp, content = http_client.request(base_url + path)
@@ -355,5 +355,6 @@ def load(app=None):
     handler.register(IndexController)
     handler.register(VolumeAddController)
     handler.register(VolumeGetController)
+    handler.register(VolumeQueueController)
     handler.register(VolumeRefreshController)
     handler.register(VolumeSearchController)
