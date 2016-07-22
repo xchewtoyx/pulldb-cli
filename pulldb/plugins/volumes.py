@@ -1,3 +1,4 @@
+# pylint: disable=too-few-public-methods
 import json
 from urllib import urlencode
 
@@ -198,6 +199,36 @@ class VolumeGetController(controller.CementBaseController):
                 result['status'],
                 result['message'],
             )
+
+
+class VolumeQueueController(controller.CementBaseController):
+    'Request that a single volume be marked for refresh.'
+    class Meta(object):
+        'Settings for queue controller'
+        label = 'volume_queue'
+        aliases = ['queue']
+        aliases_only = True
+        stacked_on = 'volume'
+        stacked_type = 'nested'
+        arguments = [
+            (['volume'], {
+                'help': 'Volume id to queue for updates.',
+                'type': int,
+            }),
+        ]
+
+    @controller.expose(hide=True)
+    def default(self):
+        auth_handler = handler.get('auth', 'oauth2')()
+        auth_handler._setup(self.app)
+        http_client = auth_handler.client()
+        base_url = self.app.config.get('base', 'batch_url')
+        path = '/batch/volumes/%s/queue' % (
+            self.app.pargs.volume,
+        )
+        resp, content = http_client.request(base_url + path)
+        print content
+
 
 class VolumeRefreshController(controller.CementBaseController):
     class Meta:
